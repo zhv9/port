@@ -66,5 +66,6 @@
 *.XLS   diff=astextplain merge=binary
 *.xlsx  diff=astextplain merge=binary
 *.XLSX  diff=astextplain merge=binary
+*.mpp   diff=astextplain merge=binary
 
 *.iso   filter=lfs diff=lfs merge=lfs -text
