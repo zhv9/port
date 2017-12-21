@@ -2,7 +2,7 @@
 import time
 import sys
 import threading
-from . import defines
+import defines
 from enum import Enum
 from .libs import GPIO
 
