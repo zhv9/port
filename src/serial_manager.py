@@ -52,10 +52,10 @@ class SerialSetup(object):
 
     # 设置各个参数为默认值
     def set_default(self):
-        self.ser.set_port("/dev/ttyAMA0")
+        # self.set_port("/dev/ttyAMA0")
         # ser.port = "/dev/ttyUSB0"
         # ser.port = "/dev/ttyS2"
-        self.ser.set_baudrate(9600)
+        self.set_baudrate(9600)
         self.ser.bytesize = serial.EIGHTBITS  # number of bits per bytes
         self.ser.parity = serial.PARITY_NONE  # set parity check: no parity
         self.ser.stopbits = serial.STOPBITS_ONE  # number of stop bits
@@ -103,7 +103,10 @@ class SerialData(object):
                 send_data.decode('ascii')
             except UnicodeDecodeError:
                 return False
-        self.serial_virtual_device[device_name][receive_data] = send_data
+        if device_name in self.serial_virtual_device:
+            self.serial_virtual_device[device_name][receive_data] = send_data
+        else:
+            self.serial_virtual_device[device_name] = {receive_data: send_data}
         return True
 
     # 给指定的device_name的模拟设备设置响应数据集，如果出错则返回False，如果都正常返回True
@@ -162,7 +165,7 @@ class ResponseRequests(threading.Thread):
 
 
 def main():
-    ser = serial.Serial
+    ser = serial.Serial()
     serial_setup = SerialSetup(ser)
     serial_setup.set_port("COM7")
 
