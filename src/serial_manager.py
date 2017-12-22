@@ -3,7 +3,7 @@ import serial
 import time
 import threading
 import sys
-import defines
+from . import defines
 
 
 class SerialSetup(object):
