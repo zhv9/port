@@ -2,7 +2,7 @@
 import time
 import sys
 import threading
-import defines
+from . import defines
 from enum import Enum
 from .libs import GPIO
 
@@ -26,20 +26,27 @@ class IoSetup(object):
                    io12=IoType.input, io13=IoType.input, io14=IoType.input, io15=IoType.input)
 
     def __init__(self):
+        self.gpio = GPIO
         pass
 
+    def set_gpio(self, my_gpio):
+        self.gpio = my_gpio
+
+    def get_gpio(self):
+        return self.gpio
+
     def set_io_mode(self):
-        GPIO.setmode(GPIO.BOARD)
+        self.gpio.setmode(self.gpio.BOARD)
 
     def set_io_type(self, io_type: IoType, io_number):
         if io_number in defines.io_defines:
             io = defines.io_defines.get(io_number)
             if io_type == IoType.input:
-                GPIO.setup(io, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                self.gpio.setup(io, self.gpio.IN, pull_up_down=self.gpio.PUD_DOWN)
                 self.io_type[io_number] = IoType.input
 
             elif io_type == IoType.output:
-                GPIO.setup(io, GPIO.OUT)
+                self.gpio.setup(io, self.gpio.OUT)
                 self.io_type[io_number] = IoType.output
             else:
                 print("IO设置类型错误")
@@ -62,17 +69,17 @@ class IoSetup(object):
 
     def io_cleanup_setup(self, io_number=None):
         if io_number is None:
-            GPIO.cleanup()
+            self.gpio.cleanup()
         else:
             io = defines.io_defines.get(io_number)
-            GPIO.cleanup(io)
+            self.gpio.cleanup(io)
 
     def set_edge_callback(self, input_port, edge_type: EdgeType, function_name):
         # todo: 需要把function_name换成具体的Function
         if edge_type == EdgeType.raising:
-            GPIO.add_event_detect(input_port, GPIO.RISING, callback=function_name)
+            self.gpio.add_event_detect(input_port, self.gpio.RISING, callback=function_name)
         else:
-            GPIO.add_event_detect(input_port, GPIO.RISING, callback=function_name)
+            self.gpio.add_event_detect(input_port, self.gpio.RISING, callback=function_name)
 
     def load_settings(self, db_instance):
         # todo: 读取数据库数据并执行初始化设置
@@ -91,7 +98,7 @@ class IoData(object):
         iosetup = IoSetup()
         if io_number in defines.io_defines:
             if io_number in iosetup.get_io_type(IoType.output):
-                GPIO.output(defines.io_defines.get(io_number), level)
+                iosetup.get_gpio().output(defines.io_defines.get(io_number), level)
                 self.io_prev_output_status[io_number] = level
                 result = (True, io_number)
             else:
@@ -114,7 +121,7 @@ class IoData(object):
         if io_number in defines.io_defines:
             if io_number in iosetup.get_io_type(IoType.input):
                 io = defines.io_defines.get(io_number)
-                result = (io_number, GPIO.input(io))
+                result = (io_number, iosetup.get_gpio().input(io))
             else:
                 if io_number in self.io_prev_output_status:
                     result = (io_number, self.io_prev_output_status[io_number])
