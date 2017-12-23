@@ -49,6 +49,8 @@ class IoSetup(object):
             elif io_type == IoType.output:
                 self.gpio.setup(io, self.gpio.OUT)
                 self.io_type[io_number] = IoType.output
+            elif io_type == IoType.notset:
+                self.io_cleanup_setup(io_number)
             else:
                 print("IO设置类型错误")
                 return False, "IO设置类型错误"
