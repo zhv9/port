@@ -10,6 +10,7 @@ from .libs import GPIO
 class IoType(Enum):
     input = 0
     output = 1
+    notset = 2
 
 
 class EdgeType(Enum):
@@ -20,10 +21,10 @@ class EdgeType(Enum):
 # 对io接口的输入输出类型进行设置，并将设置保存下来，在启动时读取设置
 class IoSetup(object):
     # 定义一个静态自动来保存每个io口的配置信息
-    io_type = dict(io0=IoType.input, io1=IoType.input, io2=IoType.input, io3=IoType.input,
-                   io4=IoType.input, io5=IoType.input, io6=IoType.input, io7=IoType.input,
-                   io8=IoType.input, io9=IoType.input, io10=IoType.input, io11=IoType.input,
-                   io12=IoType.input, io13=IoType.input, io14=IoType.input, io15=IoType.input)
+    io_type = dict(io0=IoType.notset, io1=IoType.notset, io2=IoType.notset, io3=IoType.notset,
+                   io4=IoType.notset, io5=IoType.notset, io6=IoType.notset, io7=IoType.notset,
+                   io8=IoType.notset, io9=IoType.notset, io10=IoType.notset, io11=IoType.notset,
+                   io12=IoType.notset, io13=IoType.notset, io14=IoType.notset, io15=IoType.notset)
 
     def __init__(self):
         self.gpio = GPIO
