@@ -26,19 +26,24 @@ class IoSetup(object):
                    io8=IoType.notset, io9=IoType.notset, io10=IoType.notset, io11=IoType.notset,
                    io12=IoType.notset, io13=IoType.notset, io14=IoType.notset, io15=IoType.notset)
 
+    # 默认使用Rpi的GPIO
     def __init__(self):
         self.gpio = GPIO
         pass
 
+    # 设置GPIO实例，为了便于注入gpio
     def set_gpio(self, my_gpio):
         self.gpio = my_gpio
 
+    # 获取GPIO的实例
     def get_gpio(self):
         return self.gpio
 
+    # 设置IO的模式，这里直接默认为BOARD模式
     def set_io_mode(self):
         self.gpio.setmode(self.gpio.BOARD)
 
+    # 设置IO类型，可以设置为input、output和notset
     def set_io_type(self, io_type: IoType, io_number):
         if io_number in defines.io_defines:
             io = defines.io_defines.get(io_number)
@@ -59,10 +64,12 @@ class IoSetup(object):
             print("IO编号名错误")
             return False, "IO编号名错误"
 
+    # 将一组io(io_list里面是io名称)设置为对应的类型
     def set_io_list(self, io_type: IoType, io_list):
         for io_number in io_list:
-            self.set_io_type(io_type, defines.io_defines.get(io_number))
+            self.set_io_type(io_type, io_number)
 
+    # 获取IO的类型
     def get_io_type(self, io_type):
         result = []
         for io_name in self.io_type:
@@ -70,6 +77,7 @@ class IoSetup(object):
                 result.append(io_name)
         return result
 
+    # 清除IO设置，如果不给参数则清除所有IO的设置
     def io_cleanup_setup(self, io_number=None):
         if io_number is None:
             self.gpio.cleanup()
@@ -77,6 +85,7 @@ class IoSetup(object):
             io = defines.io_defines.get(io_number)
             self.gpio.cleanup(io)
 
+    # 设置上升和下降沿执行的函数
     def set_edge_callback(self, input_port, edge_type: EdgeType, function_name):
         # todo: 需要把function_name换成具体的Function
         if edge_type == EdgeType.raising:
