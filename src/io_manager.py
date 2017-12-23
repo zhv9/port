@@ -81,20 +81,29 @@ class IoSetup(object):
     def io_cleanup_setup(self, io_number=None):
         if io_number is None:
             self.gpio.cleanup()
+            IoData.io_prev_output_status.clear()
             for io_key in self.io_type:
                 self.io_type[io_key] = IoType.notset
         else:
             io = defines.io_defines.get(io_number)
             self.gpio.cleanup(io)
+            if io_number in IoData.io_prev_output_status:
+                IoData.io_prev_output_status.pop(io_number)
             self.io_type[io_number] = IoType.notset
 
     # 设置上升和下降沿执行的函数
-    def set_edge_callback(self, input_port, edge_type: EdgeType, function_name):
+    def set_edge_callback(self, io_number, edge_type: EdgeType, function_name):
         # todo: 需要把function_name换成具体的Function
-        if edge_type == EdgeType.raising:
-            self.gpio.add_event_detect(input_port, self.gpio.RISING, callback=function_name)
+        if (io_number in defines.io_defines) and (io_number in self.get_io_type(IoType.input)):
+            input_port = defines.io_defines.get(io_number)
+            if edge_type == EdgeType.raising:
+                self.gpio.add_event_detect(input_port, self.gpio.RISING, callback=function_name)
+            else:
+                self.gpio.add_event_detect(input_port, self.gpio.FALLING, callback=function_name)
+            return True, io_number
         else:
-            self.gpio.add_event_detect(input_port, self.gpio.RISING, callback=function_name)
+            print("IO编号名错误，或" + io_number + "不是输入接口")
+            return False, "IO编号名错误，或" + io_number + "不是输入接口"
 
     def load_settings(self, db_instance):
         # todo: 读取数据库数据并执行初始化设置
@@ -146,8 +155,9 @@ class IoData(object):
             result = (False, io_number + "编号错误")
         return result
 
-    def get_inputs_data(self, io_list):
+    def get_data_list(self, io_list):
         result = []
         for io_number in io_list:
             result.append(self.get_data(io_number))
         return result
+
