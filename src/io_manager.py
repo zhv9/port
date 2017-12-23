@@ -81,8 +81,11 @@ class IoSetup(object):
     def io_cleanup_setup(self, io_number=None):
         if io_number is None:
             self.gpio.cleanup()
+            for io in self.io_type:
+                self.io_type[io] = IoType.notset
         else:
             io = defines.io_defines.get(io_number)
+            self.io_type[io] = IoType.notset
             self.gpio.cleanup(io)
 
     # 设置上升和下降沿执行的函数
