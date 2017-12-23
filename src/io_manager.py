@@ -81,12 +81,12 @@ class IoSetup(object):
     def io_cleanup_setup(self, io_number=None):
         if io_number is None:
             self.gpio.cleanup()
-            for io in self.io_type:
-                self.io_type[io] = IoType.notset
+            for io_key in self.io_type:
+                self.io_type[io_key] = IoType.notset
         else:
             io = defines.io_defines.get(io_number)
-            self.io_type[io] = IoType.notset
             self.gpio.cleanup(io)
+            self.io_type[io_number] = IoType.notset
 
     # 设置上升和下降沿执行的函数
     def set_edge_callback(self, input_port, edge_type: EdgeType, function_name):
