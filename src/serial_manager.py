@@ -91,8 +91,9 @@ class SerialData(object):
         return self.serial_virtual_device[defines.ACTIVE_DEVICE]
 
     # 给指定的device_name的模拟设备添加单个输入输出数据，如果都正常返回True
-    def add_virtual_device_data(self, device_name, receive_data, send_data):
+    def add_virtual_device_data(self, device_name, receive_data: str, send_data: str):
         # 输入和输出数据进行确认，如果不是ascii字符则报错(串口只能使用ascii字符和数字)
+        # todo: 对于receive_data为int时，下面字典会报错，由于暂时不需要int的参数，所以暂时限制输入输出仅为string
         if type(receive_data) != int:
             try:
                 receive_data.decode('ascii')
