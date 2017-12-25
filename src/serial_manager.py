@@ -9,9 +9,13 @@ from . import defines
 class SerialSetup(object):
     ser: serial.Serial()
 
-    def __init__(self, ser):
-        self.ser = ser
+    def __init__(self):
+        self.ser = serial.Serial()
         # initialization and open the port
+        self.set_default()
+
+    def set_serial(self, ser):
+        self.ser = ser
         self.set_default()
 
     # 获取串口实例
@@ -96,13 +100,13 @@ class SerialData(object):
         # todo: 对于receive_data为int时，下面字典会报错，由于暂时不需要int的参数，所以暂时限制输入输出仅为string
         if type(receive_data) != int:
             try:
-                receive_data.decode('ascii')
-            except UnicodeDecodeError:
+                receive_data.encode('ascii')
+            except UnicodeEncodeError:
                 return False
         if type(send_data) != int:
             try:
-                send_data.decode('ascii')
-            except UnicodeDecodeError:
+                send_data.encode('ascii')
+            except UnicodeEncodeError:
                 return False
         if device_name in self.serial_virtual_device:
             self.serial_virtual_device[device_name][receive_data] = send_data
