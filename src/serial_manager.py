@@ -121,6 +121,13 @@ class SerialData(object):
             result = result and self.add_virtual_device_data(device_name, k, v)
         return result
 
+    # 获取所有已经设置的模拟设备
+    def get_virtual_device(self):
+        result = self.serial_virtual_device
+        if defines.ACTIVE_DEVICE in result:
+            result.pop(defines.ACTIVE_DEVICE)
+        return result
+
     # 根据receive_data和默认的设备名称，获取字典中对应的输出数据，返回一个元组，第一位是是否成功，第二位是对应数据
     def get_response_data(self, receive_data):
         active_device_name = self.get_active_virtual_device()
