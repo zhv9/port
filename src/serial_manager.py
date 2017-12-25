@@ -41,7 +41,7 @@ class SerialSetup(object):
     # 设置写延迟
     def set_write_timeout(self, write_timeout):
         if write_timeout > 10:
-            self.ser.writeTimeout(write_timeout)
+            self.ser.writeTimeout = write_timeout
             return True
         else:
             return False
