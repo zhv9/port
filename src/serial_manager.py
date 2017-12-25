@@ -170,8 +170,7 @@ class ResponseRequests(threading.Thread):
 
 
 def main():
-    ser = serial.Serial()
-    serial_setup = SerialSetup(ser)
+    serial_setup = SerialSetup()
     serial_setup.set_port("COM7")
 
     serial_data = SerialData()
