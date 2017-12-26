@@ -129,7 +129,7 @@ class SerialData(object):
         return result
 
     # 根据receive_data和默认的设备名称，获取字典中对应的输出数据，返回一个元组，第一位是是否成功，第二位是对应数据
-    def get_response_data(self, receive_data):
+    def get_response_data(self, receive_data: str):
         active_device_name = self.get_active_virtual_device()
         if receive_data in self.serial_virtual_device[active_device_name]:
             return True, self.serial_virtual_device[active_device_name][receive_data]
@@ -140,11 +140,49 @@ class SerialData(object):
 class ResponseRequests(threading.Thread):
     def __init__(self, ser):
         threading.Thread.__init__(self)
+        self.my_data = SerialData()
         self.ser = ser
 
-    # 读取串口接收到的数据，根据接收到的数据发送数据的主线程
+    def set_serial(self, ser: serial.Serial()):
+        self.ser = ser
+
+    def set_data_resource(self, my_data: SerialData()):
+        self.my_data = my_data
+
+    # 将输入参数(串口读取到的数据)处理为string然后发送对应的数据
+    def read_respond_data(self, read_data):
+        if read_data != str.encode('', 'ascii'):
+            if type(read_data) == bytes:
+                read_data = read_data.decode('ascii')
+            response = self.my_data.get_response_data(read_data)
+            if response[0]:
+                print("%s read: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), read_data))
+                return self.send_serial_data(response[1])
+            else:
+                print("请求数据不正确 %s " % (read_data,))
+                return False, read_data
+
+    # 发送数据，参数可以是string也可以是int
+    def send_serial_data(self, send_data):
+        result = bool
+        if type(send_data) == str:
+            try:
+                send_data = str.encode(send_data, 'ascii')
+            except Exception as e1:
+                return False, e1
+            self.ser.write(send_data)
+            print("%s 发送: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), send_data))
+            result = True
+        elif type(send_data) == int:
+            self.ser.write(send_data)
+            print("%s 发送: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), send_data))
+            result = True
+        else:
+            result = False
+        return result, send_data
+
+    # 开始循环线程
     def run(self):
-        serial_data = SerialData()
         try:
             self.ser.flushInput()  # flush input buffer, discarding all its contents
             self.ser.flushOutput()  # flush output buffer, aborting current output
@@ -154,26 +192,11 @@ class ResponseRequests(threading.Thread):
             while True:
                 read_data = self.ser.read(1)
                 read_data += self.ser.read(self.ser.inWaiting())
-
-                if read_data != str.encode('', 'ascii'):
-                    response = serial_data.get_response_data(read_data)
-                    if response[0]:
-                        print("%s read: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), read_data))
-                        self.send_serial_data(response[1])
-                    else:
-                        print("请求数据不正确 %s " % (read_data,))
+                result = self.read_respond_data(read_data)
+                # todo: 还需增加发送成功和失败时的处理
 
         except Exception as e1:
             print("通信错误: " + str(e1))
-
-    # 发送数据，参数可以是string也可以是int
-    def send_serial_data(self, send_data):
-        if type(send_data) != int:
-            self.ser.write(str.encode(send_data, 'ascii'))
-            print("%s 发送: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), str.encode('send_data', 'ascii')))
-        else:
-            self.ser.write(send_data)
-            print("%s 发送: %s " % (time.strftime('%H-%M-%S', time.localtime(time.time())), send_data))
 
 
 def main():
