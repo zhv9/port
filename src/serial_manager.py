@@ -14,7 +14,21 @@ class SerialSetup(object):
         # initialization and open the port
         self.set_default()
 
+    def open_serial(self):
+        try:
+            self.ser.close()
+        except Exception as e1:
+            print(e1)
+        self.ser.open()
+
+    def close_serial(self):
+        try:
+            self.ser.close()
+        except Exception as e1:
+            print(e1)
+
     def set_serial(self, ser):
+        self.close_serial()
         self.ser = ser
         self.set_default()
 
