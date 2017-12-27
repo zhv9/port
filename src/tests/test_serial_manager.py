@@ -2,8 +2,8 @@ import unittest
 import serial
 from unittest import mock
 from unittest.mock import patch
-from .. import serial_manager
-from .. import defines
+from ..hardware import serial_manager
+from ..hardware import defines
 
 
 class TestSerialSetup(unittest.TestCase):
