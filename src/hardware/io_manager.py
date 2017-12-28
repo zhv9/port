@@ -145,20 +145,20 @@ class IoData(object):
         if io_number in defines.io_defines:
             if io_number in iosetup.get_io_type(IoType.input):
                 io = defines.io_defines.get(io_number)
-                result = (io_number, iosetup.get_gpio().input(io))
+                result = iosetup.get_gpio().input(io)
             else:
                 if io_number in self.io_prev_output_status:
-                    result = (io_number, self.io_prev_output_status[io_number])
+                    result = self.io_prev_output_status[io_number]
                 else:
-                    result = (io_number, '输出接口' + io_number + "没有初始化")
+                    result = '输出接口' + io_number + "没有初始化"
         else:
-            result = (io_number, io_number + "编号错误")
+            result = io_number + "编号错误"
+        result = {io_number: result}
         return result
 
     def get_data_list(self, io_list):
         result = {}
         for io_number in io_list:
-            temp = self.get_data(io_number)
-            result[temp[0]] = temp[1]
+            result.update(self.get_data(io_number))
 
         return result

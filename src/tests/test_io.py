@@ -97,13 +97,13 @@ class TestIoData(unittest.TestCase):
         self.io_data.set_output_data(io_number2, False)
         result2 = self.io_data.get_data(io_number2)
 
-        self.assertEqual((io_number1, True), result1)
-        self.assertEqual((io_number2, False), result2)
+        self.assertEqual({io_number1: True}, result1)
+        self.assertEqual({io_number2: False}, result2)
 
         # 在清除io设置后检查程序是否正确
         self.io_server.io_cleanup_setup()
         result = self.io_data.get_data(io_number1)
-        self.assertEqual((io_number1, '输出接口' + io_number1 + "没有初始化"), result)
+        self.assertEqual({io_number1: '输出接口' + io_number1 + "没有初始化"}, result)
 
     def test_set_output_data__use_input_io__return_false(self):
         io_number = 'io1'
@@ -135,20 +135,21 @@ class TestIoData(unittest.TestCase):
         io_number = 'io15'
         mock_input.return_value = True
         self.io_server.set_io_type(io_manager.IoType.input, io_number)
-        self.io_data.get_data(io_number)
-
-        mock_input.assert_called_once_with(defines.io_defines[io_number])
-
-    # 使用mock代替GPIO
-    @patch.object(my_gpio, 'input')
-    def test_get_data__get_input_data__return_input_data(self, mock_input):
-        io_number = 'io15'
-        mock_input.return_value = True
-        self.io_server.set_io_type(io_manager.IoType.input, io_number)
         result = self.io_data.get_data(io_number)
 
         mock_input.assert_called_once_with(defines.io_defines[io_number])
-        self.assertEqual(('io15', True), result)
+        self.assertEqual({'io15': True}, result)
+
+    @patch.object(my_gpio, 'output')
+    def test_get_data__get_output_data__return_output_data(self, mock_output):
+        io_number = 'io15'
+        mock_output.return_value = True
+        self.io_server.set_io_type(io_manager.IoType.output, io_number)
+        self.io_data.set_output_data(io_number, True)
+        result = self.io_data.get_data(io_number)
+
+        # mock_output.setup.assert_called_once_with(defines.io_defines[io_number], mock_output.OUT)
+        self.assertEqual({'io15': True}, result)
 
     # 使用mock代替GPIO
     @patch.object(my_gpio, 'input')
