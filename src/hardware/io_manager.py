@@ -150,14 +150,15 @@ class IoData(object):
                 if io_number in self.io_prev_output_status:
                     result = (io_number, self.io_prev_output_status[io_number])
                 else:
-                    result = (False, '输出接口' + io_number + "没有初始化")
+                    result = (io_number, '输出接口' + io_number + "没有初始化")
         else:
-            result = (False, io_number + "编号错误")
+            result = (io_number, io_number + "编号错误")
         return result
 
     def get_data_list(self, io_list):
-        result = []
+        result = {}
         for io_number in io_list:
-            result.append(self.get_data(io_number))
-        return result
+            temp = self.get_data(io_number)
+            result[temp[0]] = temp[1]
 
+        return result

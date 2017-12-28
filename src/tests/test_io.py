@@ -103,7 +103,7 @@ class TestIoData(unittest.TestCase):
         # 在清除io设置后检查程序是否正确
         self.io_server.io_cleanup_setup()
         result = self.io_data.get_data(io_number1)
-        self.assertEqual((False, '输出接口' + io_number1 + "没有初始化"), result)
+        self.assertEqual((io_number1, '输出接口' + io_number1 + "没有初始化"), result)
 
     def test_set_output_data__use_input_io__return_false(self):
         io_number = 'io1'
@@ -118,7 +118,7 @@ class TestIoData(unittest.TestCase):
         result2 = self.io_data.get_data_list(io_list)
 
         self.assertEqual([(True, 'io1'), (True, 'io3'), (True, 'io15')], result1)
-        self.assertEqual([('io1', True), ('io3', True), ('io15', True)], result2)
+        self.assertEqual({'io1': True, 'io3': True, 'io15': True}, result2)
 
     def test_set_outputs_data__use_low_level__return_true(self):
         io_list = ['io1', 'io3', 'io15']
@@ -127,7 +127,7 @@ class TestIoData(unittest.TestCase):
         result2 = self.io_data.get_data_list(io_list)
 
         self.assertEqual([(True, 'io1'), (True, 'io3'), (True, 'io15')], result1)
-        self.assertEqual([('io1', False), ('io3', False), ('io15', False)], result2)
+        self.assertEqual({'io1': False, 'io3': False, 'io15': False}, result2)
 
     # 使用mock代替GPIO
     @patch.object(my_gpio, 'input')
@@ -165,7 +165,7 @@ class TestIoData(unittest.TestCase):
 
         self.assertEqual(len(io_list), mock_input.call_count)
         self.assertEqual(expected, str(mock_input.call_args_list))
-        self.assertEqual([('io1', True), ('io3', True), ('io15', True)], result)
+        self.assertEqual({'io1': True, 'io3': True, 'io15': True}, result)
 
 
 if __name__ == '__main__':
