@@ -105,6 +105,18 @@ class TestSerialData(unittest.TestCase):
         for (k2, v2) in devices['测试1'].items():
             self.assertEqual(v2, devices['测试1'][k2])
 
+    def test_delete_virtual_device(self):
+        device_name1 = '测试1'
+        data1 = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
+        device_name2 = '测试2'
+        data2 = {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
+        self.my_data.set_virtual_device(device_name1, data1)
+        self.my_data.set_virtual_device(device_name2, data2)
+        self.my_data.delete_virtual_device(device_name1)
+
+        result = self.my_data.get_virtual_device()
+        self.assertEqual({device_name2: data2}, result)
+
     def test_get_respond_data__from_active_device__return_correct_data(self):
         device_name1 = '测试1'
         device_name2 = '测试2'

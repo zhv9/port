@@ -135,6 +135,14 @@ class SerialData(object):
             result = result and self.add_virtual_device_data(device_name, k, v)
         return result
 
+    # 删除指定的模拟设备
+    def delete_virtual_device(self, device_name):
+        if device_name == defines.ACTIVE_DEVICE:
+            return False
+        else:
+            self.serial_virtual_device.pop(device_name)
+            return True
+
     # 获取所有已经设置的模拟设备
     def get_virtual_device(self):
         result = self.serial_virtual_device
