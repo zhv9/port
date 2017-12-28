@@ -52,6 +52,7 @@ class IoSetup(object):
                 self.io_type[io_number] = IoType.input
 
             elif io_type == IoType.output:
+                # todo: 设置输出后，需要确定默认值或pull_up_down
                 self.gpio.setup(io, self.gpio.OUT)
                 self.io_type[io_number] = IoType.output
             elif io_type == IoType.notset:
