@@ -7,12 +7,12 @@ from . import defines
 
 
 class SerialSetup(object):
-    ser: serial.Serial()
+    ser = serial.Serial()
 
     def __init__(self):
-        self.ser = serial.Serial()
         # initialization and open the port
-        self.set_default()
+        # self.set_default()
+        pass
 
     def open_serial(self):
         try:
@@ -30,7 +30,7 @@ class SerialSetup(object):
     def set_serial(self, ser):
         self.close_serial()
         self.ser = ser
-        self.set_default()
+        # self.set_default()
 
     # 获取串口实例
     def get_serial(self):
@@ -106,7 +106,10 @@ class SerialData(object):
             return False
 
     def get_active_virtual_device(self):
-        return self.serial_virtual_device[defines.ACTIVE_DEVICE]
+        if defines.ACTIVE_DEVICE in self.serial_virtual_device.keys():
+            return self.serial_virtual_device[defines.ACTIVE_DEVICE]
+        else:
+            return 'notset'
 
     # 给指定的device_name的模拟设备添加单个输入输出数据，如果都正常返回True
     def add_virtual_device_data(self, device_name, receive_data: str, send_data: str):

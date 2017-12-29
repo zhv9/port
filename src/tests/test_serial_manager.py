@@ -2,8 +2,8 @@ import unittest
 import serial
 from unittest import mock
 from unittest.mock import patch
-from ..hardware import serial_manager
-from ..hardware import defines
+from src.hardware import serial_manager
+from src.hardware import defines
 
 
 class TestSerialSetup(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestSerialSetup(unittest.TestCase):
         result = self.my_ser.set_baudrate(500)
         r2 = self.my_ser.get_serial().baudrate
         self.assertEqual(False, result)
-        self.assertEqual(9600, r2)
+        self.assertNotEqual(500, r2)
 
     def test_set_write_timeout__use_right_data__return_true(self):
         result = self.my_ser.set_write_timeout(100)
@@ -193,3 +193,7 @@ class TestResponseRequests(unittest.TestCase):
         result = self.my_response.read_respond_data(b"receive1\r\n")
         my_mock_serial.write.assert_called_once_with(b'send1\r\n')
         self.assertEqual((True, b"send1\r\n"), result)
+
+
+if __name__ == '__main__':
+    unittest.main()
