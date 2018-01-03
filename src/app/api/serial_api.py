@@ -1,7 +1,10 @@
+# import sys
+# sys.path.append('../..')
+import json
 from flask import Flask
-from flask_restful import reqparse, abort, Api, Resource
-from ...hardware import serial_manager
-from ...hardware import defines
+from flask_restful import reqparse, abort, Api, Resource, request
+from src.hardware import serial_manager
+from src.hardware import defines
 
 app = Flask(__name__)
 api = Api(app)
@@ -14,18 +17,18 @@ class SerialSetting(Resource):
 
     def get(self):
         result = {
-            'setting': {'service': {}},
-            'device': {'active_device': {}}
+            'setting': {'service': {},
+                        'device': {'active_device': str}
+                        }
         }
         result['setting']['service']['baudrate'] = self.my_serial.get_serial().baudrate
         result['setting']['service']['serial_port'] = self.my_serial.get_serial().port
         result['setting']['service']['read_timeout'] = self.my_serial.get_serial().timeout
         result['setting']['service']['write_timeout'] = self.my_serial.get_serial().write_timeout
-
         result['setting']['device']['active_device'] = self.my_device.get_active_virtual_device()
         result['setting']['device'] = self.my_device.get_virtual_device()
 
-        return {'serial_setup': result}
+        return {'serial_setup': result}, 200
 
 
 class SerialSettingService(Resource):
@@ -33,35 +36,59 @@ class SerialSettingService(Resource):
         self.my_serial = serial_manager.SerialSetup()
         self.my_device = serial_manager.SerialData()
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument('serial_service', type={}, help='串口设置', location='json')
+        self.parser.add_argument('serial_service')
 
     def get(self):
         result = {
-            'setting': {'service': {}},
-            'device': {'active_device': {}}
+            'service': {},
         }
-        result['setting']['service']['baudrate'] = self.my_serial.get_serial().baudrate
-        result['setting']['service']['serial_port'] = self.my_serial.get_serial().port
-        result['setting']['service']['read_timeout'] = self.my_serial.get_serial().timeout
-        result['setting']['service']['write_timeout'] = self.my_serial.get_serial().write_timeout
-        return {'serial_setup': result}
+        result['service']['baudrate'] = self.my_serial.get_serial().baudrate
+        result['service']['serial_port'] = self.my_serial.get_serial().port
+        result['service']['read_timeout'] = self.my_serial.get_serial().timeout
+        result['service']['write_timeout'] = self.my_serial.get_serial().write_timeout
+        return {'serial_service_setting': result}
 
     def post(self):
-        self.put()
+        return self.put()
 
     def put(self):
         result = []
-        args = self.parser.parse_args()
+        args = request.get_json()
         if 'baudrate' in args.keys():
             result.append(self.my_serial.set_baudrate(args['baudrate']))
         if 'serial_port' in args.keys():
-            result.append(self.my_serial.set_baudrate(args['serial_port']))
+            result.append(self.my_serial.set_port(args['serial_port']))
         if 'read_timeout' in args.keys():
-            result.append(self.my_serial.set_baudrate(args['read_timeout']))
+            result.append(self.my_serial.set_read_timeout(args['read_timeout']))
         if 'write_timeout' in args.keys():
-            result.append(self.my_serial.set_baudrate(args['write_timeout']))
+            result.append(self.my_serial.set_write_timeout(args['write_timeout']))
 
-        return {'serial_setup_result', result}
+        return {'serial_setup_result': result}
+
+
+class SerialSettingDevices(Resource):
+    def __init__(self):
+        self.my_serial = serial_manager.SerialSetup()
+        self.my_device = serial_manager.SerialData()
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('serial_device', help='串口数据设置', location='json')
+
+    def get(self):
+        result = {}
+        result = self.my_device.get_virtual_device()
+        # result['active_device'] = self.my_device.get_active_virtual_device()
+        return {'serial_device': result}
+
+    # 添加虚拟设备
+    def post(self):
+        args = request.get_json()
+        result = {}
+        for device, respond_setting in args['serial_device'].items():
+            result[device] = self.my_device.set_virtual_device(device, respond_setting)
+        return result
+
+    def put(self):
+        return self.post()
 
 
 class SerialSettingDevice(Resource):
@@ -69,35 +96,31 @@ class SerialSettingDevice(Resource):
         self.my_serial = serial_manager.SerialSetup()
         self.my_device = serial_manager.SerialData()
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument('serial_device', type=[], help='串口设置', location='json')
+        self.parser.add_argument('serial_device', help='串口数据设置', location='json')
 
-    def get(self):
+    def get(self, device_name):
         result = self.my_device.get_virtual_device()
-        # result['active_device'] = self.my_device.get_active_virtual_device()
-
-        return {'device': result}
+        if device_name is not None:
+            if device_name in result:
+                result = {device_name: result[device_name]}
+            else:
+                abort(404)
+        return {'serial_device': result}
 
     # 添加虚拟设备
-    def post(self):
-        args = self.parser.parse_args()
-        result = bool
-        for device_name, respond_setting in args.items():
-            result = self.my_device.set_virtual_device(device_name, respond_setting)
+    def post(self, device_name):
+        args = request.get_json()
+        result = {}
+        for k, v in args[device_name].items():
+            result[device_name] = self.my_device.add_virtual_device_data(device_name, k, v)
+        return result
 
-        if result is False:
-            abort(500)
-        else:
-            return '', 200
-
-    def put(self):
-        self.post()
+    def put(self, device_name):
+        return self.post(device_name)
 
     def delete(self, device_name):
         result = self.my_device.delete_virtual_device(device_name)
-        if result:
-            return '', 200
-        else:
-            return '', 500
+        return {device_name: result}
 
 
 class SerialSettingActiveDevice(Resource):
@@ -114,14 +137,15 @@ class SerialSettingActiveDevice(Resource):
     def put(self, device_name):
         result = self.my_device.set_active_virtual_device(device_name)
         if result:
-            return '', 200
+            return ''
         else:
-            return '', 500
+            return ''
 
 
-api.add_resource(SerialSetting, '/api/serial/setting/service/')
+api.add_resource(SerialSetting, '/api/serial/setting/')
 api.add_resource(SerialSettingService, '/api/serial/setting/service/')
-api.add_resource(SerialSettingDevice, '/api/serial/setting/device/<device_name>')
+api.add_resource(SerialSettingDevices, '/api/serial/setting/device/', endpoint='devices')
+api.add_resource(SerialSettingDevice, '/api/serial/setting/device/<string:device_name>', endpoint='device')
 api.add_resource(SerialSettingActiveDevice, '/api/serial/setting/device/active_device/<device_name>')
 
 if __name__ == '__main__':

@@ -133,9 +133,9 @@ class SerialData(object):
 
     # 给指定的device_name的模拟设备设置响应数据集，如果出错则返回False，如果都正常返回True
     def set_virtual_device(self, device_name, respond_setting: dict):
-        result = True
+        result = []
         for k, v in respond_setting.items():
-            result = result and self.add_virtual_device_data(device_name, k, v)
+            result.append(self.add_virtual_device_data(device_name, k, v))
         return result
 
     # 删除指定的模拟设备

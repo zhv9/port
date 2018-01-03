@@ -14,11 +14,12 @@ class TestSerialSetup(unittest.TestCase):
         pass
 
     def test_set_baudrate__use_right_data__return_true(self):
+        self.my_ser.set_baudrate(19200)
         r1 = self.my_ser.get_serial().baudrate
         result = self.my_ser.set_baudrate(115200)
         r2 = self.my_ser.get_serial().baudrate
         self.assertEqual(True, result)
-        self.assertEqual(9600, r1)
+        self.assertEqual(19200, r1)
         self.assertEqual(115200, r2)
 
     def test_set_baudrate__use_wrong_data__return_False(self):
@@ -100,7 +101,7 @@ class TestSerialData(unittest.TestCase):
         data = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
         result = self.my_data.set_virtual_device(device_name, data)
 
-        self.assertEqual(True, result)
+        self.assertEqual([True, True, True, True], result)
         devices = self.my_data.get_virtual_device()
         for (k2, v2) in devices['测试1'].items():
             self.assertEqual(v2, devices['测试1'][k2])
