@@ -25,10 +25,10 @@ class SerialSetting(Resource):
         result['setting']['service']['serial_port'] = self.my_serial.get_serial().port
         result['setting']['service']['read_timeout'] = self.my_serial.get_serial().timeout
         result['setting']['service']['write_timeout'] = self.my_serial.get_serial().write_timeout
-        result['setting']['device']['active_device'] = self.my_device.get_active_virtual_device()
         result['setting']['device'] = self.my_device.get_virtual_device()
+        result['setting']['device']['active_device'] = self.my_device.get_active_virtual_device()
 
-        return {'serial_setup': result}, 200
+        return {'serial_setup': result}
 
 
 class SerialSettingService(Resource):
@@ -127,25 +127,28 @@ class SerialSettingActiveDevice(Resource):
     def __init__(self):
         self.my_device = serial_manager.SerialData()
 
-    def get(self):
-        result = self.my_device.get_active_virtual_device()
-        return {'active_device': result}
-
     def post(self, device_name):
-        self.put(device_name)
+        return self.put(device_name)
 
     def put(self, device_name):
         result = self.my_device.set_active_virtual_device(device_name)
-        if result:
-            return ''
-        else:
-            return ''
+        return {device_name: result}
+
+
+class SerialSettingActiveDeviceGet(Resource):
+    def __init__(self):
+        self.my_device = serial_manager.SerialData()
+
+    def get(self):
+        result = self.my_device.get_active_virtual_device()
+        return {'active_device': result}
 
 
 api.add_resource(SerialSetting, '/api/serial/setting/')
 api.add_resource(SerialSettingService, '/api/serial/setting/service/')
 api.add_resource(SerialSettingDevices, '/api/serial/setting/device/', endpoint='devices')
 api.add_resource(SerialSettingDevice, '/api/serial/setting/device/<string:device_name>', endpoint='device')
+api.add_resource(SerialSettingActiveDeviceGet, '/api/serial/setting/device/active_device/')
 api.add_resource(SerialSettingActiveDevice, '/api/serial/setting/device/active_device/<device_name>')
 
 if __name__ == '__main__':

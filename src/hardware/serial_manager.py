@@ -148,7 +148,7 @@ class SerialData(object):
 
     # 获取所有已经设置的模拟设备
     def get_virtual_device(self):
-        result = self.serial_virtual_device
+        result = self.serial_virtual_device.copy()
         if defines.ACTIVE_DEVICE in result:
             result.pop(defines.ACTIVE_DEVICE)
         return result
