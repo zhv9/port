@@ -1,12 +1,10 @@
 import sys
+
 sys.path.append('../..')
 from flask import Flask
 from flask_restful import reqparse, abort, Api, Resource
-from hardware import io_manager
-from hardware import defines
-
-app = Flask(__name__)
-api = Api(app)
+from src.hardware import io_manager
+from src.hardware import defines
 
 
 class IoSetting(Resource):
@@ -134,11 +132,18 @@ class IoSettingEvent(Resource):
         self.parser = reqparse.RequestParser()
 
 
-api.add_resource(IoSetting, '/api/io/setting/')
-api.add_resource(IoSettingInput, '/api/io/setting/input/<io_number>')
-api.add_resource(IoSettingOutput, '/api/io/setting/output/<io_number>')
-api.add_resource(IoSettingEvent, '/api/io/setting/event/<io_number>')
-api.add_resource(IoData, '/api/io/setting/data/<io_number>')
+def init_api(api):
+    api.add_resource(IoSetting, '/api/io/setting/')
+    api.add_resource(IoSettingInput, '/api/io/setting/input/<io_number>')
+    api.add_resource(IoSettingOutput, '/api/io/setting/output/<io_number>')
+    api.add_resource(IoSettingEvent, '/api/io/setting/event/<io_number>')
+    api.add_resource(IoData, '/api/io/setting/data/<io_number>')
+
 
 if __name__ == '__main__':
+    app = Flask(__name__,
+                static_folder="../static",
+                template_folder="../templates")
+    my_api = Api(app)
+    init_api(my_api)
     app.run(debug=True)

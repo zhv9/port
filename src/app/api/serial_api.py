@@ -6,9 +6,6 @@ from flask_restful import reqparse, abort, Api, Resource, request
 from src.hardware import serial_manager
 from src.hardware import defines
 
-app = Flask(__name__)
-api = Api(app)
-
 
 class SerialSetting(Resource):
     def __init__(self):
@@ -144,12 +141,19 @@ class SerialSettingActiveDeviceGet(Resource):
         return {'active_device': result}
 
 
-api.add_resource(SerialSetting, '/api/serial/setting/')
-api.add_resource(SerialSettingService, '/api/serial/setting/service/')
-api.add_resource(SerialSettingDevices, '/api/serial/setting/device/', endpoint='devices')
-api.add_resource(SerialSettingDevice, '/api/serial/setting/device/<string:device_name>', endpoint='device')
-api.add_resource(SerialSettingActiveDeviceGet, '/api/serial/setting/device/active_device/')
-api.add_resource(SerialSettingActiveDevice, '/api/serial/setting/device/active_device/<device_name>')
+def init_api(api):
+    api.add_resource(SerialSetting, '/api/serial/setting/')
+    api.add_resource(SerialSettingService, '/api/serial/setting/service/')
+    api.add_resource(SerialSettingDevices, '/api/serial/setting/device/', endpoint='devices')
+    api.add_resource(SerialSettingDevice, '/api/serial/setting/device/<string:device_name>', endpoint='device')
+    api.add_resource(SerialSettingActiveDeviceGet, '/api/serial/setting/device/active_device/')
+    api.add_resource(SerialSettingActiveDevice, '/api/serial/setting/device/active_device/<device_name>')
+
 
 if __name__ == '__main__':
+    app = Flask(__name__,
+                static_folder="../static",
+                template_folder="../templates")
+    my_api = Api(app)
+    init_api(my_api)
     app.run(debug=True)
