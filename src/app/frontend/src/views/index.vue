@@ -1,14 +1,15 @@
 <style scoped>
-    .layout{
+    .layout {
         border: 1px solid #d7dde4;
         background: #f5f7f9;
         position: relative;
         border-radius: 4px;
         overflow: hidden;
     }
-    .layout-header-bar{
+
+    .layout-header-bar {
         background: #fff;
-        box-shadow: 0 1px 1px rgba(0,0,0,.1);
+        box-shadow: 0 1px 1px rgba(0, 0, 0, .1);
     }
 </style>
 <template>
@@ -77,51 +78,60 @@
             <Content :style="{padding: '0 16px 16px'}">
                 <Breadcrumb :style="{margin: '16px 0'}">
                     <BreadcrumbItem>Home</BreadcrumbItem>
-                    <BreadcrumbItem>{{components}}</BreadcrumbItem>
-                    <BreadcrumbItem>{{layout}}</BreadcrumbItem>
+                    <BreadcrumbItem>{{navComponents}}</BreadcrumbItem>
+                    <BreadcrumbItem>{{navLayout}}</BreadcrumbItem>
                 </Breadcrumb>
                 <Card>
-                    <div style="height: 600px">{{content}}</div>
+                    <div style="height: 600px">
+                        <component :is="currentView"></component>
+                    </div>
                 </Card>
             </Content>
         </Layout>
     </div>
 </template>
 <script>
+    import ioSetting from './IoSetting'
+    import ioData from './IoData'
+    import serialSetting from './SerialSetting'
+    import serialData from './SerialData'
     export default {
-        data(){
+        data() {
             return {
-                components:'',
-                layout:'',
-                contents:{
-                    'IO控制':{
-                        '配置':'ioSetting',
-                        '数据':'ioData',
-                        '其他':'ioOther'
+                navComponents: '',
+                navLayout: '',
+                contents: {
+                    'IO控制': {
+                        '配置': ioSetting,
+                        '数据': ioData,
+                        '其他': 'ioOther'
                     },
-                    '串口控制':{
-                        '配置':'serialSetting',
-                        '数据':'serialData',
-                        '其他':'serialOther'
+                    '串口控制': {
+                        '配置': serialSetting,
+                        '数据': serialData,
+                        '其他': 'serialOther'
                     },
-                    'ModBus控制':{
-                        '配置':'modbusSetting',
-                        '数据':'modbusData',
-                        '其他':'modbusOther'
+                    'ModBus控制': {
+                        '配置': 'modbusSetting',
+                        '数据': 'modbusData',
+                        '其他': 'modbusOther'
                     }
                 },
-                content:'cccccc'
+                currentView: ''
             }
         },
-        methods:{
-            menuClick(event){
+        components: {
+            ioSetting, ioData, serialSetting, serialData
+        },
+        methods: {
+            menuClick(event) {
                 var components = event.currentTarget.parentElement.parentNode.firstChild.innerText
-                                        .replace(/^(\s|\u00A0)+/,'').replace(/(\s|\u00A0)+$/,'');
+                    .trim();
                 var layout = event.currentTarget.innerText
-                                        .replace(/^(\s|\u00A0)+/,'').replace(/(\s|\u00A0)+$/,'');
-                this.components = components;
-                this.layout = layout;
-                console.log(this.contents[components][layout]);
+                    .replace(/^(\s|\u00A0)+/, '').replace(/(\s|\u00A0)+$/, '');
+                this.navComponents = components;
+                this.navLayout = layout;
+                this.currentView = this.contents[components][layout]
             }
         }
     }
