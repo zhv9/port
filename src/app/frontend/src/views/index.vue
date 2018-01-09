@@ -82,7 +82,7 @@
                     <BreadcrumbItem>{{navLayout}}</BreadcrumbItem>
                 </Breadcrumb>
                 <Card>
-                    <div style="height: 600px">
+                    <div>
                         <component :is="currentView"></component>
                     </div>
                 </Card>
