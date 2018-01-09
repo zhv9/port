@@ -22,3 +22,6 @@ io_defines = dict(io0=7, io1=11, io2=12, io3=13, io4=15, io5=16, io6=18, io7=22,
 baudrate_list = [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 43000, 56000, 57600, 115200]
 
 ACTIVE_DEVICE = 'active_device'
+
+RECEIVE_DATA = 'receive'
+SEND_DATA = 'send'

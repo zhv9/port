@@ -126,16 +126,27 @@ class SerialData(object):
             except UnicodeEncodeError:
                 return False
         if device_name in self.serial_virtual_device:
-            self.serial_virtual_device[device_name][receive_data] = send_data
+            index = None
+            for i, data in enumerate(self.serial_virtual_device[device_name]):
+                # 如果有receive重复的就将数组下标记下来
+                if data.get(defines.RECEIVE_DATA) == receive_data:
+                    index = i
+            if index is None:
+                self.serial_virtual_device[device_name].append({defines.RECEIVE_DATA: receive_data, defines.SEND_DATA: send_data})
+            else:
+                self.serial_virtual_device[device_name][index][defines.SEND_DATA] = send_data
         else:
-            self.serial_virtual_device[device_name] = {receive_data: send_data}
+            self.serial_virtual_device[device_name] = []
+            self.serial_virtual_device[device_name].append({defines.RECEIVE_DATA: receive_data, defines.SEND_DATA: send_data})
         return True
 
     # 给指定的device_name的模拟设备设置响应数据集，如果出错则返回False，如果都正常返回True
-    def set_virtual_device(self, device_name, respond_setting: dict):
+    def set_virtual_device(self, device_name, respond_setting: list):
         result = []
-        for k, v in respond_setting.items():
-            result.append(self.add_virtual_device_data(device_name, k, v))
+        if device_name in self.serial_virtual_device:
+            self.serial_virtual_device.pop(device_name)
+        for data in respond_setting:
+            result.append(self.add_virtual_device_data(device_name, data.get(defines.RECEIVE_DATA), data.get(defines.SEND_DATA)))
         return result
 
     # 删除指定的模拟设备
@@ -156,8 +167,13 @@ class SerialData(object):
     # 根据receive_data和默认的设备名称，获取字典中对应的输出数据，返回一个元组，第一位是是否成功，第二位是对应数据
     def get_response_data(self, receive_data: str):
         active_device_name = self.get_active_virtual_device()
-        if receive_data in self.serial_virtual_device[active_device_name]:
-            return True, self.serial_virtual_device[active_device_name][receive_data]
+        send_data = None
+        for data in self.serial_virtual_device[active_device_name]:
+            if data.get(defines.RECEIVE_DATA) == receive_data:
+                send_data = data.get(defines.SEND_DATA)
+                break
+        if send_data is not None:
+            return True, send_data
         else:
             return False, receive_data
 

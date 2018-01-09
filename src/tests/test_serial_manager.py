@@ -1,5 +1,6 @@
 import unittest
 import serial
+import copy
 from unittest import mock
 from unittest.mock import patch
 from src.hardware import serial_manager
@@ -58,10 +59,13 @@ class TestSerialData(unittest.TestCase):
         device_name = 'test_device'
         receive_data = 'receive'
         send_data = 'send'
+
         result = self.my_data.add_virtual_device_data(device_name, receive_data, send_data)
-        result_data = self.my_data.serial_virtual_device[device_name][receive_data]
+        result_receive_data = self.my_data.serial_virtual_device[device_name][0].get('receive')
+        result_send_data = self.my_data.serial_virtual_device[device_name][0].get(defines.SEND_DATA)
         self.assertEqual(True, result)
-        self.assertEqual(send_data, result_data)
+        self.assertEqual(receive_data, result_receive_data)
+        self.assertEqual(send_data, result_send_data)
 
     def test_add_virtual_device_data__use_crlf__return_true(self):
         device_name = 'test_device'
@@ -69,9 +73,11 @@ class TestSerialData(unittest.TestCase):
         send_data = 'send\r\n'
 
         result = self.my_data.add_virtual_device_data(device_name, receive_data, send_data)
-        result_data = self.my_data.serial_virtual_device[device_name][receive_data]
+        result_receive_data = self.my_data.serial_virtual_device[device_name][0].get('receive')
+        result_send_data = self.my_data.serial_virtual_device[device_name][0].get(defines.SEND_DATA)
         self.assertEqual(True, result)
-        self.assertEqual(send_data, result_data)
+        self.assertEqual(receive_data, result_receive_data)
+        self.assertEqual(send_data, result_send_data)
 
     def test_add_virtual_device_data__use_unicode_data__return_false(self):
         device_name = '测试'
@@ -82,35 +88,106 @@ class TestSerialData(unittest.TestCase):
         self.assertEqual(False, result)
 
     def test_add_virtual_device_data__use_unicode_name_and_multiple_data__return_true(self):
-        data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                }
+        data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
         result = []
         for (k1, v1) in data.items():
-            for (k2, v2) in v1.items():
-                result.append(self.my_data.add_virtual_device_data(k1, k2, v2))
+            for d in v1:
+                result.append(self.my_data.add_virtual_device_data(k1, d.get('receive'), d.get(defines.SEND_DATA)))
         self.assertEqual([True, True, True, True, True, True, True], result)
 
         devices = self.my_data.get_virtual_device()
+        self.assertEqual(data, devices)
+
+    def test_add_virtual_device_data__change_to_new_data__return_new_data(self):
+        data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            ],
+        }
+        new_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1--change\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},  # not change
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4--new\r\n'},
+            ],
+            '测试2--new': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
+        using_data = copy.deepcopy(new_data)
+        using_data['测试1'].pop(1)
         for (k1, v1) in data.items():
-            for (k2, v2) in v1.items():
-                self.assertEqual(v2, devices[k1][k2])
+            self.my_data.set_virtual_device(k1, v1)
+        for (k1, v1) in using_data.items():
+            for value in v1:
+                self.my_data.add_virtual_device_data(k1, value.get('receive'), value.get(defines.SEND_DATA))
+        devices = self.my_data.get_virtual_device()
+        self.assertEqual(new_data, devices)
 
     def test_set_virtual_device(self):
         device_name = '测试1'
-        data = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
+        data = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
         result = self.my_data.set_virtual_device(device_name, data)
 
         self.assertEqual([True, True, True, True], result)
         devices = self.my_data.get_virtual_device()
-        for (k2, v2) in devices['测试1'].items():
-            self.assertEqual(v2, devices['测试1'][k2])
+        self.assertEqual({device_name: data}, devices)
+
+    def test_set_virtual_device__change_to_new_device__return_new_device(self):
+        device_name = '测试1'
+        data = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+        ]
+        new_data = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1---new-change\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3--new-change\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4-new\r\n'},
+        ]
+        self.my_data.set_virtual_device(device_name, data)
+        result = self.my_data.set_virtual_device(device_name, new_data)
+        devices = self.my_data.get_virtual_device()
+
+        self.assertEqual([True, True, True], result)
+        self.assertEqual({device_name: new_data}, devices)
 
     def test_delete_virtual_device(self):
         device_name1 = '测试1'
-        data1 = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
+        data1 = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
         device_name2 = '测试2'
-        data2 = {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
+        data2 = [
+            {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+            {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+            {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+        ]
         self.my_data.set_virtual_device(device_name1, data1)
         self.my_data.set_virtual_device(device_name2, data2)
         self.my_data.delete_virtual_device(device_name1)
@@ -121,22 +198,38 @@ class TestSerialData(unittest.TestCase):
     def test_get_respond_data__from_active_device__return_correct_data(self):
         device_name1 = '测试1'
         device_name2 = '测试2'
-        data1 = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
-        data2 = {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n'}
+        data1 = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
+        data2 = [
+            {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+            {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+        ]
         self.my_data.set_virtual_device(device_name1, data1)
         self.my_data.set_virtual_device(device_name2, data2)
         self.my_data.set_active_virtual_device(device_name1)
 
         result = self.my_data.get_response_data('receive1\r\n')
-        expected = data1.get('receive1\r\n')
+        expected = data1[0].get(defines.SEND_DATA)
         self.assertEqual(True, result[0])
         self.assertEqual(expected, result[1])
 
     def test_get_respond_data__from_not_active_device__return_false(self):
         device_name1 = '测试1'
         device_name2 = '测试2'
-        data1 = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
-        data2 = {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n'}
+        data1 = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
+        data2 = [
+            {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+            {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+        ]
         self.my_data.set_virtual_device(device_name1, data1)
         self.my_data.set_virtual_device(device_name2, data2)
         self.my_data.set_active_virtual_device(device_name1)
@@ -183,8 +276,17 @@ class TestResponseRequests(unittest.TestCase):
     def test_read_respond_data(self, my_mock_serial):
         device_name1 = '测试1'
         device_name2 = '测试2'
-        data1 = {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'}
-        data2 = {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n'}
+        data1 = [
+            {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+            {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
+        data2 = [
+            {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+            {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+            {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+        ]
         self.my_data.set_virtual_device(device_name1, data1)
         self.my_data.set_virtual_device(device_name2, data2)
         self.my_data.set_active_virtual_device(device_name1)
