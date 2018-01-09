@@ -1,9 +1,9 @@
 import unittest
 from unittest import mock
 from unittest.mock import patch
-from ..hardware.libs import GPIO as my_gpio
-from ..hardware import io_manager
-from ..hardware import defines
+from src.hardware.libs import GPIO as my_gpio
+from src.hardware import io_manager
+from src.hardware import defines
 
 
 class TestIoSetup(unittest.TestCase):
