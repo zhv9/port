@@ -108,8 +108,8 @@ class SerialSettingDevice(Resource):
     def post(self, device_name):
         args = request.get_json()
         result = {}
-        for k, v in args[device_name].items():
-            result[device_name] = self.my_device.add_virtual_device_data(device_name, k, v)
+        for value in args[device_name]:
+            result[device_name] = self.my_device.add_virtual_device_data(device_name, value.get('receive', value.get('send')))
         return result
 
     def put(self, device_name):

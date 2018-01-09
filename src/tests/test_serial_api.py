@@ -3,7 +3,10 @@ import json
 from unittest import mock
 from unittest.mock import patch
 from src.app.api import serial_api
+from flask_restful import Api
+from flask import Flask
 from src.hardware import serial_manager
+from src.hardware import defines
 
 from src.tests import util
 
@@ -25,14 +28,25 @@ class TestSerialSetting(unittest.TestCase):
         # mock_get_virtual_device.return_value = SerialTestUtil.data
         self.my_serial_setting.set_baudrate(38400)
 
-        send_data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                     '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                     }
+        send_data = {
+            '测试1': [
+                {'receive': 'receive1\r\n', 'send': 'send1\r\n'},
+                {'receive': 'receive2\r\n', 'send': 'send2\r\n'},
+                {'receive': 'receive3\r\n', 'send': 'send3\r\n'},
+                {'receive': 'receive4\r\n', 'send': 'send4\r\n'},
+            ],
+            '测试2': [
+                {'receive': 'receiveA\r\n', 'send': 'sendA\r\n'},
+                {'receive': 'receiveB\r\n', 'send': 'sendB\r\n'},
+                {'receive': 'receiveC\r\n', 'send': 'sendC\r\n'},
+            ]
+        }
         data = json.dumps({'serial_device': send_data}, ensure_ascii=False)
         self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
         self.client.post('/api/serial/setting/device/active_device/' + '测试1', headers=util.headers)
-        expected = {"serial_setup": {"setting": {"service": {"baudrate": 38400, "serial_port": None, "read_timeout": None, "write_timeout": None},
-                                                 "device": self.my_serial_data.serial_virtual_device}}}
+        expected = {"serial_setup": {"setting": {
+            "service": {"baudrate": 38400, "serial_port": None, "read_timeout": None, "write_timeout": None},
+            "device": self.my_serial_data.serial_virtual_device}}}
         result = self.client.get('/api/serial/setting/')
         self.assertEqual(200, result.status_code)
         self.assertEqual(expected, json.loads(result.data))
@@ -83,9 +97,19 @@ class TestSerialSettingDevices(unittest.TestCase):
         self.my_serial_data.serial_virtual_device.clear()
 
     def test_post__ok_data__return_true(self):
-        send_data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                     '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                     }
+        send_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
         data = json.dumps({'serial_device': send_data}, ensure_ascii=False)
         response = self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
 
@@ -94,9 +118,19 @@ class TestSerialSettingDevices(unittest.TestCase):
         self.assertEqual(expected, json.loads(response.data))
 
     def test_post__utf8_data__return_false(self):
-        send_data = {'测试1': {'错误数据1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', '错误数据2\r\n': 'send4\r\n'},
-                     '测试2': {'receiveA\r\n': '错误返回值\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': '错误返回值\r\n'}
-                     }
+        send_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: '错误数据1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: '错误数据2\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: '错误返回值\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: '错误返回值\r\n'},
+            ]
+        }
         data = json.dumps({'serial_device': send_data}, ensure_ascii=False)
         response = self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
 
@@ -105,9 +139,19 @@ class TestSerialSettingDevices(unittest.TestCase):
         self.assertEqual(excepted, json.loads(response.data))
 
     def test_get(self):
-        send_data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                     '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                     }
+        send_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
         data = json.dumps({'serial_device': send_data}, ensure_ascii=False)
         self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
 
@@ -120,9 +164,19 @@ class TestSerialSettingDevice(unittest.TestCase):
     def setUp(self):
         self.client = get_test_client()
         self.name = 'serial_device'
-        self.send_data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                          '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                          }
+        self.send_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
         data = json.dumps({self.name: self.send_data}, ensure_ascii=False)
         self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
         self.my_serial_data = serial_manager.SerialData()
@@ -148,9 +202,19 @@ class SerialSettingActiveDevice(unittest.TestCase):
     def setUp(self):
         self.client = get_test_client()
         self.name = 'serial_active_device'
-        self.send_data = {'测试1': {'receive1\r\n': 'send1\r\n', 'receive2\r\n': 'send2\r\n', 'receive3\r\n': 'send3\r\n', 'receive4\r\n': 'send4\r\n'},
-                          '测试2': {'receiveA\r\n': 'sendA\r\n', 'receiveB\r\n': 'sendB\r\n', 'receiveC\r\n': 'sendC\r\n'}
-                          }
+        self.send_data = {
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
         data = json.dumps({'serial_device': self.send_data}, ensure_ascii=False)
         self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
         self.my_serial_data = serial_manager.SerialData()
@@ -175,7 +239,11 @@ class SerialSettingActiveDevice(unittest.TestCase):
 
 
 def get_test_client():
-    app = serial_api.app
+    app = Flask(__name__,
+                static_folder="../static",
+                template_folder="../templates")
+    my_api = Api(app)
+    serial_api.init_api(my_api)
     return app.test_client()
 
 
