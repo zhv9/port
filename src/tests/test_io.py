@@ -5,6 +5,28 @@ from src.hardware.libs import GPIO as my_gpio
 from src.hardware import io_manager
 from src.hardware import defines
 
+test_data = {
+    'input': [{"io_number": "io0", "io_name": "输入测试1"},
+              {"io_number": "io1", "io_name": "输入测试2"},
+              {"io_number": "io2", "io_name": "输入测试3"},
+              {"io_number": "io3", "io_name": "输入测试4"},
+              {"io_number": "io4", "io_name": "输入测试5"},
+              {"io_number": "io5", "io_name": "输入测试6"},
+              {"io_number": "io6", "io_name": "输入测试7"}
+              ],
+    'output': [{"io_number": "io8", "io_name": "输出测试1"},
+               {"io_number": "io9", "io_name": "输出测试2"},
+               {"io_number": "io10", "io_name": "输出测试3"},
+               {"io_number": "io11", "io_name": "输出测试4"},
+               {"io_number": "io12", "io_name": "输出测试5"},
+               {"io_number": "io13", "io_name": "输出测试6"},
+               {"io_number": "io14", "io_name": "输出测试7"}
+               ],
+    'notset': [{'io_number': 'io7', "io_name": ""},
+               {"io_number": "io15", "io_name": ""}
+               ]
+}
+
 
 class TestIoSetup(unittest.TestCase):
     def setUp(self):
@@ -46,13 +68,52 @@ class TestIoSetup(unittest.TestCase):
         result = self.io_server.get_io_type(io_manager.IoType.output)
         self.assertEqual(io_list, result)
 
-    def test_io_cleanup_setup(self):
+    def test_set_io_name(self):
+        self.io_server.set_io_name('io0', '测试1')
+        self.io_server.set_io_name('io1', '测试2')
+        result0 = self.io_server.io_name.get('io0')
+        result1 = self.io_server.io_name.get('io1')
+        self.assertEqual('测试1', result0)
+        self.assertEqual('测试2', result1)
+
+    def test_get_io_name__one_name__return_one_name(self):
+        self.io_server.set_io_name('io3', '测试3')
+        self.io_server.set_io_name('io5', '测试5')
+        result = self.io_server.get_io_name('io3')
+        self.assertEqual('测试3', result)
+
+    def test_get_io_name__all_io__return_all_name(self):
+        self.io_server.set_io_name('io0', '测试1')
+        self.io_server.set_io_name('io1', '测试2')
+        self.io_server.set_io_name('io15', '测试15')
+        io_name = dict(io0='测试1', io1='测试2', io2='', io3='',
+                       io4='', io5='', io6='', io7='',
+                       io8='', io9='', io10='', io11='',
+                       io12='', io13='', io14='', io15='测试15')
+        result = self.io_server.get_io_name()
+
+        self.assertEqual(io_name, result)
+
+    def test_get_io_setting(self):
+        for io_type, io_data_list in test_data.items():
+            for io_data in io_data_list:
+                self.io_server.set_io_type(io_manager.IoType[io_type], io_data.get('io_number'))
+                self.io_server.set_io_name(io_data.get('io_number'), io_data.get('io_name'))
+        result = self.io_server.get_io_setting()
+        self.assertEqual(test_data, result)
+
+    def test_io_cleanup_setup__clean_type_and_name__no_type_and_name(self):
         io_list = ['io0', 'io3', 'io10', 'io15']
         self.io_server.set_io_list(io_manager.IoType.output, io_list)
+        self.io_server.set_io_name('io3', '测试3')
+        self.io_server.set_io_name('io15', '测试15')
         self.io_server.io_cleanup_setup('io3')
         io_list.pop(1)
         result = self.io_server.get_io_type(io_manager.IoType.output)
+        result_name = self.io_server.get_io_name()
         self.assertEqual(io_list, result)
+        self.assertEqual('', result_name.get('io3'))
+        self.assertEqual('测试15', result_name.get('io15'))
 
     def test_io_cleanup_setup__with_data(self):
         io_list = ['io0', 'io3', 'io10', 'io15']

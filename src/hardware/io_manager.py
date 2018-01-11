@@ -26,6 +26,11 @@ class IoSetup(object):
                    io8=IoType.notset, io9=IoType.notset, io10=IoType.notset, io11=IoType.notset,
                    io12=IoType.notset, io13=IoType.notset, io14=IoType.notset, io15=IoType.notset)
 
+    io_name = dict(io0='', io1='', io2='', io3='',
+                   io4='', io5='', io6='', io7='',
+                   io8='', io9='', io10='', io11='',
+                   io12='', io13='', io14='', io15='')
+
     # 默认使用Rpi的GPIO
     def __init__(self):
         self.gpio = GPIO
@@ -73,9 +78,35 @@ class IoSetup(object):
     # 获取IO的类型
     def get_io_type(self, io_type):
         result = []
-        for io_name in self.io_type:
-            if self.io_type.get(io_name) == io_type:
-                result.append(io_name)
+        for io_number in self.io_type:
+            if self.io_type.get(io_number) == io_type:
+                result.append(io_number)
+        return result
+
+    def set_io_name(self, io_number, io_name):
+        self.io_name[io_number] = io_name
+
+    def get_io_name(self, io_number=None):
+        if io_number is None:
+            return self.io_name
+        else:
+            return self.io_name.get(io_number)
+
+    def get_io_setting(self):
+        inputs = []
+        outputs = []
+        notsets = []
+        for io_number in self.io_type:
+            io_name = self.io_name.get(io_number)
+            if self.io_type.get(io_number) == IoType.input:
+                inputs.append({'io_number': io_number, 'io_name': io_name})
+            elif self.io_type.get(io_number) == IoType.output:
+                outputs.append({'io_number': io_number, 'io_name': io_name})
+            elif self.io_type.get(io_number) == IoType.notset:
+                notsets.append({'io_number': io_number, 'io_name': io_name})
+            else:
+                pass
+        result = {'input': inputs, 'output': outputs, 'notset': notsets}
         return result
 
     # 清除IO设置，如果不给参数则清除所有IO的设置
@@ -85,12 +116,14 @@ class IoSetup(object):
             IoData.io_prev_output_status.clear()
             for io_key in self.io_type:
                 self.io_type[io_key] = IoType.notset
+                self.io_name[io_key] = ''
         else:
             io = defines.io_defines.get(io_number)
             self.gpio.cleanup(io)
             if io_number in IoData.io_prev_output_status:
                 IoData.io_prev_output_status.pop(io_number)
             self.io_type[io_number] = IoType.notset
+            self.io_name[io_number] = ''
 
     # 设置上升和下降沿执行的函数
     def set_edge_callback(self, io_number, edge_type: EdgeType, function_name):
