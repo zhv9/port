@@ -2,9 +2,10 @@
     <div>
         <Form ref="serial-setting-data" :model="serial_device" :label-width="60" inline>
             <FormItem label="生效设备">
-                <Select v-model="serial_device.active_device">
-                    <Option v-for="(value, deviceName) in serial_device" v-if="deviceName !== 'active_device'" :value='deviceName'>{{deviceName}}</Option>
-                </Select>
+                <!-- 使用iview的控件并编译，选择选项后不显示内容 -->
+                <select v-model="active_device" style="width:200px">
+                    <option v-for="(value, deviceName) in serial_device" :value='deviceName'>{{deviceName}}</option>
+                </select>
             </FormItem>
             <FormItem>
                 <Button type="primary" @click="handleSubmitActiveDevice()">修改生效设备</Button>
@@ -39,7 +40,7 @@
             </FormItem>
             <FormItem>
                 <Button type="primary" @click="handleSubmitDevice('serial_device')">提交</Button>
-                <Button type="ghost" @click="handleReset('serial_device')" style="margin-left: 8px">Reset</Button>
+                <Button type="ghost" @click="handleGetDevice('serial_device')" style="margin-left: 8px">Reset</Button>
             </FormItem>
         </Form>
     </div>
@@ -52,7 +53,6 @@
                 index: 1,
                 newDeviceName: '',
                 'serial_device': {
-                    active_device: '测试1',
                     测试1: [
                         { receive: 'receive1\r\n', send: 'send1\r\n' },
                         { receive: 'receive2\r\n', send: 'send2\r\n' },
@@ -65,6 +65,7 @@
                         { receive: 'receiveC\r\n', send: 'sendC\r\n' },
                     ]
                 },
+                active_device: '',
                 ruleValidate: {
                     newDeviceName: [
                         { required: true, message: '虚拟设备名称不能为空', trigger: 'blur' }
@@ -72,26 +73,88 @@
                 }
             }
         },
-        mounted(){
-            // get数据
-            console.log('get')
+        mounted() {
+            this.handleGetDevice();
+            this.handleGetActiveDevice();
         },
         methods: {
-            handleSubmitActiveDevice() {
-                // post一下serial_device.active_device
-                console.log(this.serial_device.active_device)
-            },
-            handleSubmitDevice() {
-                // post一下serial_device
-                console.log(this.serial_device)
-            },
-            handleReset(name) {
+            handleGetDevice(name) {
                 // 从设备重新获取一次数据
                 console.log(JSON.stringify(this.serial_device))
                 console.log(this.index)
                 console.log(this.serial_device)
                 console.log(this.newDeviceName)
-                this.$refs[name].resetFields();
+                const path = '/api/serial/setting/device/';
+                var self = this;
+                var xhr = new XMLHttpRequest();
+                xhr.timeout = 1000;
+                xhr.open('GET', path, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.onload = function (e) {
+                    if (this.status == 200 || this.status == 304) {
+                        var response = JSON.parse(this.responseText);
+                        self.serial_device = response['serial_device'];
+                        console.log(response);
+                    }
+                }
+                xhr.send();
+
+            },
+            handleSubmitDevice() {
+                // post一下serial_device
+                console.log(this.serial_device);
+                const path = '/api/serial/setting/device/';
+                var self = this;
+                var xhr = new XMLHttpRequest();
+                xhr.timeout = 1000;
+                xhr.open('POST', path, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.onload = function (e) {
+                    if (this.status == 200 || this.status == 304) {
+                        var response = JSON.parse(this.responseText);
+                        console.log(response);
+                    }
+                }
+                xhr.send(JSON.stringify({ 'serial_device': self.serial_device }));
+            },
+            handleSubmitActiveDevice() {
+                // post一下active_device
+                const path = '/api/serial/setting/device/active_device/';
+                var self = this;
+                var xhr = new XMLHttpRequest();
+                xhr.timeout = 1000;
+                xhr.open('POST', path + self.active_device, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.onload = function (e) {
+                    if (this.status == 200 || this.status == 304) {
+                        var response = JSON.parse(this.responseText);
+                        console.log(response);
+                    }
+                }
+                xhr.send();
+                console.log(this.active_device)
+            },
+            handleGetActiveDevice() {
+                const path = '/api/serial/setting/device/active_device/';
+                var self = this;
+                var xhr = new XMLHttpRequest();
+                xhr.timeout = 1000;
+                xhr.open('GET', path, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.onload = function (e) {
+                    if (this.status == 200 || this.status == 304) {
+                        var response = JSON.parse(this.responseText);
+                        self.active_device = response['active_device']
+
+                        console.log(response);
+                    }
+                }
+                xhr.send();
+                console.log(this.serial_device.active_device)
             },
             // 给设备添加单个项目
             handleAdd(deviceValue) {
