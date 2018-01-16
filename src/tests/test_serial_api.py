@@ -117,6 +117,28 @@ class TestSerialSettingDevices(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(expected, json.loads(response.data))
 
+    def test_post__have_active_device_data__return_true(self):
+        send_data = {
+            'active_device': '测试1',
+            '测试1': [
+                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
+                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+            ],
+            '测试2': [
+                {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+                {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+                {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+            ]
+        }
+        data = json.dumps({'serial_device': send_data}, ensure_ascii=False)
+        response = self.client.post('/api/serial/setting/device/', headers=util.headers, data=data)
+
+        expected = {'测试1': [True, True, True, True], '测试2': [True, True, True]}
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(expected, json.loads(response.data))
+
     def test_post__utf8_data__return_false(self):
         send_data = {
             '测试1': [

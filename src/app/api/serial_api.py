@@ -80,6 +80,8 @@ class SerialSettingDevices(Resource):
     def post(self):
         args = request.get_json()
         result = {}
+        if defines.ACTIVE_DEVICE in args['serial_device']:
+            args['serial_device'].pop(defines.ACTIVE_DEVICE)
         for device, respond_setting in args['serial_device'].items():
             result[device] = self.my_device.set_virtual_device(device, respond_setting)
         return result
