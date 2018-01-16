@@ -2,12 +2,12 @@
     <div>
         <Form ref="serial-setting" :model="service" :rules="ruleItem" :label-width="60" inline>
             <FormItem label="波特率">
-                <Select v-model="service.baudrate">
+                <Select v-model="service.baudrate" style="width:100px">
                     <Option v-for="number in baudrates" :value='number'>{{number}}</Option>
                 </Select>
             </FormItem>
             <FormItem label="端口号">
-                <Select v-model="service.serial_port">
+                <Select v-model="service.serial_port" style="width:100px">
                     <Option v-for="portnumber in ports" :value='portnumber'>{{portnumber}}</Option>
                 </Select>
             </FormItem>
