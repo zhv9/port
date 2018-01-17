@@ -99,9 +99,9 @@ class TestSerialSettingDevices(unittest.TestCase):
     def test_post__ok_data__return_true(self):
         send_data = {
             '测试1': [
-                {defines.RECEIVE_DATA: 'receive1\r\n', defines.SEND_DATA: 'send1\r\n'},
-                {defines.RECEIVE_DATA: 'receive2\r\n', defines.SEND_DATA: 'send2\r\n'},
-                {defines.RECEIVE_DATA: 'receive3\r\n', defines.SEND_DATA: 'send3\r\n'},
+                {defines.RECEIVE_DATA: 'receive1\\r\\n', defines.SEND_DATA: 'send1\\r\\n'},
+                {defines.RECEIVE_DATA: 'receive2\r\\n', defines.SEND_DATA: 'send2\r\\n'},
+                {defines.RECEIVE_DATA: 'receive3\\r\n', defines.SEND_DATA: 'send3\\r\n'},
                 {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
             ],
             '测试2': [
@@ -116,6 +116,7 @@ class TestSerialSettingDevices(unittest.TestCase):
         expected = {'测试1': [True, True, True, True], '测试2': [True, True, True]}
         self.assertEqual(200, response.status_code)
         self.assertEqual(expected, json.loads(response.data))
+        self.assertEqual(send_data, self.my_serial_data.serial_virtual_device)
 
     def test_post__have_active_device_data__return_true(self):
         send_data = {

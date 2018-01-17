@@ -297,6 +297,36 @@ class TestResponseRequests(unittest.TestCase):
         my_mock_serial.write.assert_called_once_with(b'send1\r\n')
         self.assertEqual((True, b"send1\r\n"), result)
 
+    @patch.object(serial, "Serial")
+    def test_read_respond_data__use_string_crlf_data__return_right_data(self, my_mock_serial):
+        device_name1 = '测试1'
+        device_name2 = '测试2'
+        data1 = [
+            {defines.RECEIVE_DATA: 'receive1\\r\\n', defines.SEND_DATA: 'send1\\r\\n'},
+            {defines.RECEIVE_DATA: 'receive2\\r\n', defines.SEND_DATA: 'send2\\r\n'},
+            {defines.RECEIVE_DATA: 'receive3\r\\n', defines.SEND_DATA: 'send3\r\\n'},
+            {defines.RECEIVE_DATA: 'receive4\r\n', defines.SEND_DATA: 'send4\r\n'},
+        ]
+        data2 = [
+            {defines.RECEIVE_DATA: 'receiveA\r\n', defines.SEND_DATA: 'sendA\r\n'},
+            {defines.RECEIVE_DATA: 'receiveB\r\n', defines.SEND_DATA: 'sendB\r\n'},
+            {defines.RECEIVE_DATA: 'receiveC\r\n', defines.SEND_DATA: 'sendC\r\n'},
+        ]
+        self.my_data.set_virtual_device(device_name1, data1)
+        self.my_data.set_virtual_device(device_name2, data2)
+        self.my_data.set_active_virtual_device(device_name1)
+
+        self.my_response.my_data = self.my_data
+        self.my_response.set_serial(my_mock_serial)
+        result = self.my_response.read_respond_data(b"receive1\r\n")
+        my_mock_serial.write.assert_called_once_with(b'send1\r\n')
+        self.assertEqual((True, b"send1\r\n"), result)
+
+        result = self.my_response.read_respond_data(b"receive2\r\n")
+        self.assertEqual((True, b"send2\r\n"), result)
+        result = self.my_response.read_respond_data(b"receive3\r\n")
+        self.assertEqual((True, b"send3\r\n"), result)
+
 
 if __name__ == '__main__':
     unittest.main()

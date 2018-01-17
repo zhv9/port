@@ -165,12 +165,14 @@ class SerialData(object):
         return result
 
     # 根据receive_data和默认的设备名称，获取字典中对应的输出数据，返回一个元组，第一位是是否成功，第二位是对应数据
+    # 对对比的数据中\\r和\\n进行替换，替换为\r和\n
     def get_response_data(self, receive_data: str):
         active_device_name = self.get_active_virtual_device()
         send_data = None
         for data in self.serial_virtual_device[active_device_name]:
-            if data.get(defines.RECEIVE_DATA) == receive_data:
-                send_data = data.get(defines.SEND_DATA)
+            compare_data = data.get(defines.RECEIVE_DATA).replace('\\r', '\r').replace('\\n', '\n')
+            if compare_data == receive_data:
+                send_data = data.get(defines.SEND_DATA).replace('\\r', '\r').replace('\\n', '\n')
                 break
         if send_data is not None:
             return True, send_data
